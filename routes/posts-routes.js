@@ -1,29 +1,10 @@
 const express = require("express");
+const postControllers = require("../controllers/posts-controllers");
 
 const router = express.Router();
 
-const posts = [
-  {
-    id: "p1",
-    title: "Post Title",
-    description: "Post Description",
-    creator: "u1",
-  },
-];
+router.get("/:pid", postControllers.getPostById);
 
-router.get("/:pid", (req, res, next) => {
-  const postId = req.params.pid;
-  const post = posts.find((p) => {
-    return p.id === postId;
-  });
-  res.json({ post: post });
-});
-
-router.get("/user/:uid", (req, res, next) => {
-  const userId = req.params.uid;
-  const post = posts.find((p) => p.creator === userId);
-
-  res.json({ post: post });
-});
+router.get("/user/:uid", postControllers.getPostByUserId);
 
 module.exports = router;
