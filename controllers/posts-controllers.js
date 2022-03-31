@@ -3,54 +3,38 @@ const { validationResult } = require("express-validator");
 const HttpError = require("../models/http-error");
 const Post = require("../models/post");
 
-let posts = [
-  {
-    id: "p1",
-    title: "Post Title",
-    description: "Post Description",
-    creator: "u1",
-  },
-];
-
-// const getPostById = (req, res, next) => {
-//   const postId = req.params.pid;
-//   const post = posts.find((p) => {
-//     return p.id === postId;
-//   });
-//   if (!post) {
-//     return next(new HttpError("Not Found!", 404));
-//   }
-//   res.json({ post: post });
-// };
-
 const getPostById = async (req, res, next) => {
   const postId = req.params.pid;
   let post;
-
   try {
     post = await Post.findById(postId);
   } catch (err) {
     const error = new HttpError("Could not find a post", 500);
     return next(error);
   }
-
   if (!post) {
     const error = new HttpError("Could not find a post", 500);
     return next(error);
   }
-
   res.json({ post: post.toObject({ getters: true }) });
   //getters: true => {_id => id}
 };
 
-const getPostByUserId = (req, res, next) => {
+const getPostByUserId = async (req, res, next) => {
   const userId = req.params.uid;
-  const post = posts.find((p) => p.creator === userId);
-  if (!post) {
-    return next(new HttpError("Not Found!", 404));
+  let posts;
+  try {
+    posts = await Post.find({ creator: userId });
+  } catch (err) {
+    const error = new HttpError("Could not find a post", 500);
+    return next(error);
+  }
+  if (!posts) {
+    const error = new HttpError("Could not find a post", 500);
+    return next(error);
   }
 
-  res.json({ post: post });
+  res.json({ posts: posts.map((post) => post.toObject({ getters: true })) });
 };
 
 const createPost = async (req, res, next) => {
@@ -60,7 +44,6 @@ const createPost = async (req, res, next) => {
     // 422 => invalid value
   }
   const { title, description, creator } = req.body;
-
   const createdPost = new Post({
     title: title,
     description: description,
@@ -80,10 +63,23 @@ const createPost = async (req, res, next) => {
   //201 => success and change value
 };
 
-const deletePost = (req, res, next) => {
+const deletePost = async (req, res, next) => {
   const postId = req.params.pid;
-  posts = posts.filter((p) => p.id !== postId);
-  res.status(200).json({ message: "Post Deleted!" });
+  let post;
+  try {
+    post = await Post.findById(postId);
+  } catch (err) {
+    const error = new HttpError("Could not delete a post", 500);
+    return next(error);
+  }
+
+  try {
+    await post.remove();
+  } catch (err) {
+    const error = new HttpError("Could not delete a post", 500);
+    return next(error);
+  }
+  res.json({ message: "Post Deleted!" });
 };
 
 exports.getPostById = getPostById;
