@@ -1,7 +1,8 @@
-const { v4: uuidv4 } = require("uuid");
 const { validationResult } = require("express-validator");
+
 const HttpError = require("../models/http-error");
 const Post = require("../models/post");
+const User = require("../models/user");
 
 const getPostById = async (req, res, next) => {
   const postId = req.params.pid;
@@ -52,8 +53,24 @@ const createPost = async (req, res, next) => {
     // id: uuidv4(),
   });
 
+  let user;
+
+  try {
+    user = await User.findById(creator);
+  } catch (err) {
+    const error = new HttpError("Creating Post Failed!", 500);
+    return next(error);
+  }
+
+  if (!user) {
+    const error = new HttpError("Could not find a user!", 422);
+    return next(error);
+  }
+
   try {
     await createdPost.save();
+    user.posts.push(createdPost);
+    await user.save();
   } catch (err) {
     const error = new HttpError("Creating Post Failed!", 500);
     return next(error);
@@ -67,7 +84,7 @@ const deletePost = async (req, res, next) => {
   const postId = req.params.pid;
   let post;
   try {
-    post = await Post.findById(postId);
+    post = await Post.findById(postId).populate("creator");
   } catch (err) {
     const error = new HttpError("Could not delete a post", 500);
     return next(error);
@@ -75,6 +92,8 @@ const deletePost = async (req, res, next) => {
 
   try {
     await post.remove();
+    post.creator.posts.pull(post);
+    await post.creator.save();
   } catch (err) {
     const error = new HttpError("Could not delete a post", 500);
     return next(error);

@@ -4,7 +4,6 @@ const mongoose = require("mongoose");
 
 const postsRoutes = require("./routes/posts-routes");
 const usersRoutes = require("./routes/users-routes");
-
 const HttpError = require("./models/http-error");
 
 const app = express();
