@@ -37,7 +37,7 @@ const signup = async (req, res, next) => {
     name: name,
     email: email,
     password: password,
-    image: "url",
+    image: req.file.path,
     posts: [], //get from db
   });
 
@@ -66,7 +66,10 @@ const login = async (req, res, next) => {
     return next(error);
   }
 
-  res.json({ message: "Logged in" });
+  res.json({
+    message: "Logged in",
+    user: existingUser.toObject({ getters: true }),
+  });
 };
 
 exports.getUsers = getUsers;
